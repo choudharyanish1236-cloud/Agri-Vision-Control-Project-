@@ -20,7 +20,10 @@ export async function analyzeCottonImage(base64Image: string): Promise<AnalysisR
     Localization Task:
     - Identify key anatomical parts (Leaves, Stems, Flowers, Bolls).
     - Crucially, identify any anomalous regions like pests (aphids, worms), leaf spots, wilt, or nutrient deficiency signs.
-    - For each region in 'detected_regions', set 'is_anomaly' to true if it represents a health issue.
+    - For each region in 'detected_regions':
+      1. Provide [ymin, xmin, ymax, xmax] coordinates (0-1000 scale).
+      2. Set 'is_anomaly' to true if it represents a health issue or pest.
+      3. Set 'confidence' to a value between 0 and 1 representing the severity of the anomaly (for health issues) or the detection certainty (for anatomical parts).
     
     Calculate the global 'health_score' using this formula: 100 * (stage_confidence * (1 - anomaly_probability)).
   `;
@@ -80,8 +83,9 @@ export async function analyzeCottonImage(base64Image: string): Promise<AnalysisR
                 },
                 label: { type: Type.STRING },
                 is_anomaly: { type: Type.BOOLEAN },
+                confidence: { type: Type.NUMBER },
               },
-              required: ["box_2d", "label", "is_anomaly"],
+              required: ["box_2d", "label", "is_anomaly", "confidence"],
             },
           },
         },

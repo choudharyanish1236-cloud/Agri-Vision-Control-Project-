@@ -26,6 +26,12 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result, imageU
     setShowIssueForm(false);
   };
 
+  const getSeverityColor = (severity: number) => {
+    if (severity < 0.3) return 'bg-yellow-400';
+    if (severity < 0.7) return 'bg-orange-500';
+    return 'bg-red-600';
+  };
+
   const isFeedbackGiven = existingFeedback && existingFeedback.status !== 'none';
 
   return (
@@ -39,35 +45,63 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result, imageU
           {result.detected_regions.map((region, idx) => {
             const [ymin, xmin, ymax, xmax] = region.box_2d;
             const isAnomaly = region.is_anomaly;
+            const severity = region.confidence;
             
             return (
               <div
                 key={idx}
-                className={`absolute border-2 transition-all duration-300 pointer-events-none flex flex-col items-start ${
+                className={`absolute border-2 transition-all duration-300 pointer-events-none ${
                   isAnomaly 
-                    ? 'border-red-500 bg-red-500/10 animate-pulse' 
-                    : 'border-emerald-400 bg-emerald-400/10'
+                    ? 'border-red-500 bg-red-500/10' 
+                    : 'border-emerald-400 bg-emerald-400/5'
                 }`}
                 style={{
                   top: `${ymin / 10}%`,
                   left: `${xmin / 10}%`,
                   width: `${(xmax - xmin) / 10}%`,
                   height: `${(ymax - ymin) / 10}%`,
-                  zIndex: isAnomaly ? 20 : 10
+                  zIndex: isAnomaly ? 20 : 10,
+                  boxShadow: isAnomaly ? `0 0 ${severity * 12}px rgba(239, 68, 68, ${severity * 0.4})` : 'none'
                 }}
               >
-                <span className={`text-white text-[10px] px-1 py-0.5 rounded-sm -mt-5 font-bold whitespace-nowrap shadow-sm ${
-                  isAnomaly ? 'bg-red-600' : 'bg-emerald-500'
-                }`}>
-                  {isAnomaly ? '⚠️ ' : ''}{region.label}
-                </span>
+                {/* Bounding Box Label */}
+                <div className="absolute -top-5 left-0">
+                  <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-t-md text-white text-[9px] font-black whitespace-nowrap shadow-sm uppercase tracking-tight ${
+                    isAnomaly ? 'bg-red-600' : 'bg-emerald-500'
+                  }`}>
+                    {isAnomaly && (
+                      <svg className="w-2 h-2 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    {region.label}
+                  </div>
+                </div>
+
+                {/* VISUAL INDICATOR: Severity Gauge Bar next to the box */}
+                {isAnomaly && (
+                  <div className="absolute -right-2 top-0 bottom-0 w-1 flex flex-col justify-end bg-black/20 rounded-full overflow-hidden">
+                    <div 
+                      className={`w-full transition-all duration-1000 ${getSeverityColor(severity)}`}
+                      style={{ height: `${severity * 100}%` }}
+                    />
+                  </div>
+                )}
+                
+                {/* Small severity percentage for anomalies */}
+                {isAnomaly && (
+                  <div className="absolute -right-12 top-0 bg-black/60 text-white text-[8px] px-1 rounded flex flex-col items-center">
+                    <span className="font-bold">{Math.round(severity * 100)}%</span>
+                    <span className="text-[6px] opacity-70">RISK</span>
+                  </div>
+                )}
               </div>
             );
           })}
           
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6 pointer-events-none">
             <p className="text-white text-sm font-medium">
-              Spatial analysis: {result.detected_regions.filter(r => r.is_anomaly).length} health risk regions identified.
+              Multimodal analysis active. {result.detected_regions.filter(r => r.is_anomaly).length} anomalies localized.
             </p>
           </div>
         </div>

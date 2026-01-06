@@ -15,6 +15,7 @@ export interface DetectedRegion {
   box_2d: [number, number, number, number]; // [ymin, xmin, ymax, xmax]
   label: string;
   is_anomaly: boolean;
+  confidence: number; // 0-1 value representing the model's certainty or severity
 }
 
 export type FeedbackStatus = 'none' | 'accurate' | 'incorrect';
