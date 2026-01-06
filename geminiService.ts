@@ -17,12 +17,12 @@ export async function analyzeCottonImage(base64Image: string): Promise<AnalysisR
     - Phase 3: Bloom (White/pink flowers visible)
     - Phase 4: Boll Development (Green pods/white lint visible)
     
-    Check for anomalies like:
-    - Pests (Aphids, Bollworms)
-    - Diseases (Wilt, Blight)
-    - Nutritional stress (Yellowing leaves, stunted growth)
+    Localization Task:
+    - Identify key anatomical parts (Leaves, Stems, Flowers, Bolls).
+    - Crucially, identify any anomalous regions like pests (aphids, worms), leaf spots, wilt, or nutrient deficiency signs.
+    - For each region in 'detected_regions', set 'is_anomaly' to true if it represents a health issue.
     
-    Calculate the health_score using this formula: 100 * (stage_confidence * (1 - anomaly_probability)).
+    Calculate the global 'health_score' using this formula: 100 * (stage_confidence * (1 - anomaly_probability)).
   `;
 
   const response = await ai.models.generateContent({
@@ -55,7 +55,7 @@ export async function analyzeCottonImage(base64Image: string): Promise<AnalysisR
           },
           is_anomaly: {
             type: Type.BOOLEAN,
-            description: "Whether a health anomaly is detected.",
+            description: "Whether any global health anomaly is detected.",
           },
           anomaly_prob: {
             type: Type.NUMBER,
@@ -79,8 +79,9 @@ export async function analyzeCottonImage(base64Image: string): Promise<AnalysisR
                   items: { type: Type.NUMBER },
                 },
                 label: { type: Type.STRING },
+                is_anomaly: { type: Type.BOOLEAN },
               },
-              required: ["box_2d", "label"],
+              required: ["box_2d", "label", "is_anomaly"],
             },
           },
         },

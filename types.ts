@@ -14,10 +14,17 @@ export interface AnalysisResult {
 export interface DetectedRegion {
   box_2d: [number, number, number, number]; // [ymin, xmin, ymax, xmax]
   label: string;
+  is_anomaly: boolean;
 }
+
+export type FeedbackStatus = 'none' | 'accurate' | 'incorrect';
 
 export interface AnalysisHistoryItem extends AnalysisResult {
   id: string;
   timestamp: number;
   imageUrl: string;
+  feedback?: {
+    status: FeedbackStatus;
+    issue?: string;
+  };
 }
