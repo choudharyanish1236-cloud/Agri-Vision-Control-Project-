@@ -1,0 +1,7 @@
+{
+  "name": "Agri-Vision Cotton AI",
+  "description": "An advanced cotton growth-stage classifier and health monitoring system powered by Gemini 3. Identify growth phases, detect anomalies, and calculate real-time health scores.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
