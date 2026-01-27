@@ -4,6 +4,7 @@ import { Layout } from './components/Layout';
 import { analyzeCottonImage } from './geminiService';
 import { AnalysisResult, AnalysisHistoryItem, FeedbackStatus } from './types';
 import { AnalysisDisplay } from './components/AnalysisDisplay';
+import { HistoryLog } from './components/HistoryLog';
 
 const App: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -39,7 +40,7 @@ const App: React.FC = () => {
           };
           
           setCurrentResult(historyItem);
-          setHistory(prev => [historyItem, ...prev].slice(0, 10));
+          setHistory(prev => [historyItem, ...prev].slice(0, 20)); // Keep up to 20 items
         } catch (err) {
           setError("Failed to analyze image. Please try again.");
           console.error(err);
@@ -59,15 +60,11 @@ const App: React.FC = () => {
 
     const updatedFeedback = { status, issue };
     
-    // Update current view
     setCurrentResult(prev => prev ? { ...prev, feedback: updatedFeedback } : null);
-    
-    // Update history entry
     setHistory(prev => prev.map(item => 
       item.id === currentResult.id ? { ...item, feedback: updatedFeedback } : item
     ));
     
-    // In a real app, you would POST this feedback to an API here.
     console.debug('Feedback submitted:', { id: currentResult.id, status, issue });
   }, [currentResult]);
 
@@ -77,11 +74,17 @@ const App: React.FC = () => {
     setError(null);
   };
 
+  const selectHistoryItem = (item: AnalysisHistoryItem) => {
+    setCurrentResult(item);
+    setCurrentImageUrl(item.imageUrl);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <Layout>
       {!currentResult && !isAnalyzing ? (
-        <div className="max-w-2xl mx-auto text-center py-12 px-4 sm:py-20">
-          <div className="mb-8">
+        <div className="max-w-4xl mx-auto flex flex-col gap-12 py-12 px-4 sm:py-20">
+          <div className="text-center">
             <div className="w-20 h-20 bg-emerald-100 rounded-3xl flex items-center justify-center mx-auto mb-6 text-emerald-600">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -113,7 +116,16 @@ const App: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-20 opacity-60">
+          {history.length > 0 && (
+            <div className="mt-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+               <HistoryLog 
+                items={history} 
+                onSelect={selectHistoryItem} 
+               />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 opacity-60">
             <div className="text-center">
               <div className="text-2xl font-bold text-emerald-900">98%</div>
               <div className="text-xs text-emerald-600 font-bold uppercase tracking-widest">Accuracy</div>
@@ -148,79 +160,59 @@ const App: React.FC = () => {
             Our agri-vision model is segmenting leaf structures and calculating phenology metrics.
           </p>
           {currentImageUrl && (
-            <div className="mt-8 rounded-2xl overflow-hidden border-2 border-emerald-100 opacity-50 grayscale max-w-xs grayscale transition-all">
+            <div className="mt-8 rounded-2xl overflow-hidden border-2 border-emerald-100 opacity-50 grayscale max-w-xs transition-all">
               <img src={currentImageUrl} alt="Preview" className="w-full h-auto" />
             </div>
           )}
         </div>
       ) : (
-        <div className="space-y-8 pb-20">
-          <div className="flex items-center justify-between gap-4">
-             <button
-              onClick={reset}
-              className="flex items-center gap-2 text-emerald-600 font-bold hover:text-emerald-700 transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              New Analysis
-            </button>
-            <div className="text-xs font-bold text-emerald-400 uppercase tracking-widest">
-              Powered by Gemini 3 Flash
-            </div>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center gap-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <span>{error}</span>
-            </div>
-          )}
-
-          {currentResult && currentImageUrl && (
-            <AnalysisDisplay 
-              result={currentResult} 
-              imageUrl={currentImageUrl} 
-              onFeedback={handleFeedback}
-              existingFeedback={currentResult.feedback}
-            />
-          )}
-
-          {history.length > 0 && (
-            <div className="pt-12 border-t border-emerald-100">
-              <h3 className="text-xl font-bold text-emerald-900 mb-6">Recent Field Logs</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {history.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setCurrentResult(item);
-                      setCurrentImageUrl(item.imageUrl);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className={`group relative aspect-square rounded-2xl overflow-hidden border-2 transition-all ${
-                      currentResult?.id === item.id ? 'border-emerald-500 scale-95' : 'border-white hover:border-emerald-200'
-                    }`}
-                  >
-                    <img src={item.imageUrl} alt="History" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                      <div className="text-white text-[10px] font-bold uppercase">{item.stage}</div>
-                      <div className="text-white/80 text-[8px]">{new Date(item.timestamp).toLocaleTimeString()}</div>
-                      {item.feedback?.status !== 'none' && (
-                        <div className="absolute top-2 right-2 bg-emerald-500 rounded-full p-1 text-white">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                ))}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-20">
+          {/* Main Content Area */}
+          <div className="lg:col-span-9 space-y-8">
+            <div className="flex items-center justify-between gap-4">
+              <button
+                onClick={reset}
+                className="flex items-center gap-2 text-emerald-600 font-bold hover:text-emerald-700 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                New Analysis
+              </button>
+              <div className="text-xs font-bold text-emerald-400 uppercase tracking-widest hidden sm:block">
+                Gemini 3 Visual Reasoning Active
               </div>
             </div>
-          )}
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center gap-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>{error}</span>
+              </div>
+            )}
+
+            {currentResult && currentImageUrl && (
+              <AnalysisDisplay 
+                result={currentResult} 
+                imageUrl={currentImageUrl} 
+                onFeedback={handleFeedback}
+                existingFeedback={currentResult.feedback}
+              />
+            )}
+          </div>
+
+          {/* Detailed Sidebar History Log */}
+          <div className="lg:col-span-3">
+             <div className="sticky top-24">
+                <HistoryLog 
+                  items={history} 
+                  currentItemId={currentResult?.id} 
+                  onSelect={selectHistoryItem} 
+                />
+             </div>
+          </div>
         </div>
       )}
     </Layout>
