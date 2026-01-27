@@ -26,10 +26,10 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result, imageU
     setShowIssueForm(false);
   };
 
-  const getSeverityColor = (severity: number) => {
-    if (severity < 0.3) return 'bg-yellow-400';
-    if (severity < 0.7) return 'bg-orange-500';
-    return 'bg-red-600';
+  const getSeverityGradient = (severity: number) => {
+    if (severity < 0.3) return 'from-yellow-300 to-yellow-500';
+    if (severity < 0.7) return 'from-orange-400 to-orange-600';
+    return 'from-red-500 to-red-800';
   };
 
   const isFeedbackGiven = existingFeedback && existingFeedback.status !== 'none';
@@ -61,7 +61,7 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result, imageU
                   width: `${(xmax - xmin) / 10}%`,
                   height: `${(ymax - ymin) / 10}%`,
                   zIndex: isAnomaly ? 20 : 10,
-                  boxShadow: isAnomaly ? `0 0 ${severity * 12}px rgba(239, 68, 68, ${severity * 0.4})` : 'none'
+                  boxShadow: isAnomaly ? `0 0 ${8 + severity * 15}px rgba(239, 68, 68, ${0.2 + severity * 0.4})` : 'none'
                 }}
               >
                 {/* Bounding Box Label */}
@@ -78,23 +78,29 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result, imageU
                   </div>
                 </div>
 
-                {/* VISUAL INDICATOR: Severity Gauge Bar next to the box */}
+                {/* VISUAL INDICATOR: Vertical Severity Bar next to the box */}
                 {isAnomaly && (
-                  <div className="absolute -right-2 top-0 bottom-0 w-1 flex flex-col justify-end bg-black/20 rounded-full overflow-hidden">
+                  <div className="absolute -right-3 top-0 bottom-0 w-1.5 flex flex-col justify-end bg-black/30 rounded-full overflow-hidden shadow-sm">
                     <div 
-                      className={`w-full transition-all duration-1000 ${getSeverityColor(severity)}`}
+                      className={`w-full transition-all duration-1000 bg-gradient-to-t ${getSeverityGradient(severity)}`}
                       style={{ height: `${severity * 100}%` }}
                     />
                   </div>
                 )}
                 
-                {/* Small severity percentage for anomalies */}
+                {/* Floating Severity Percentage Badge */}
                 {isAnomaly && (
-                  <div className="absolute -right-12 top-0 bg-black/60 text-white text-[8px] px-1 rounded flex flex-col items-center">
-                    <span className="font-bold">{Math.round(severity * 100)}%</span>
-                    <span className="text-[6px] opacity-70">RISK</span>
+                  <div className={`absolute -right-14 top-0 bg-white/90 backdrop-blur-sm text-gray-900 border border-gray-100 text-[9px] px-1.5 py-0.5 rounded-lg shadow-xl flex flex-col items-center min-w-[32px] transform transition-transform group-hover:scale-110`}>
+                    <span className="font-black leading-none">{Math.round(severity * 100)}%</span>
+                    <span className="text-[6px] opacity-60 font-bold uppercase tracking-tighter">Severity</span>
                   </div>
                 )}
+
+                {/* Corner Markers for Aesthetics */}
+                <div className={`absolute top-0 left-0 w-1 h-1 border-t border-l ${isAnomaly ? 'border-red-300' : 'border-emerald-300'}`} />
+                <div className={`absolute top-0 right-0 w-1 h-1 border-t border-r ${isAnomaly ? 'border-red-300' : 'border-emerald-300'}`} />
+                <div className={`absolute bottom-0 left-0 w-1 h-1 border-b border-l ${isAnomaly ? 'border-red-300' : 'border-emerald-300'}`} />
+                <div className={`absolute bottom-0 right-0 w-1 h-1 border-b border-r ${isAnomaly ? 'border-red-300' : 'border-emerald-300'}`} />
               </div>
             );
           })}
