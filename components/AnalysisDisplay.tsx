@@ -13,13 +13,20 @@ interface AnalysisDisplayProps {
 export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result, imageUrl, onFeedback, existingFeedback }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [showIssueForm, setShowIssueForm] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const pieData = [
     { name: 'Health', value: result.health_score },
-    { name: 'Deficit', value: 100 - result.health_score },
+    { name: 'Deficit', value: 100 - result.health_score }
   ];
 
-  const COLORS = [result.health_score > 70 ? '#10b981' : result.health_score > 40 ? '#f59e0b' : '#ef4444', '#f3f4f6'];
+  const getHealthColor = (score: number) => {
+    if (score > 70) return '#10b981';
+    if (score > 40) return '#f59e0b';
+    return '#ef4444';
+  };
+
+  const COLORS = [getHealthColor(result.health_score), '#f3f4f6'];
 
   const handleIncorrect = (issue: string) => {
     onFeedback('incorrect', issue);
@@ -90,7 +97,7 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result, imageU
                 
                 {/* Floating Severity Percentage Badge */}
                 {isAnomaly && (
-                  <div className={`absolute -right-14 top-0 bg-white/90 backdrop-blur-sm text-gray-900 border border-gray-100 text-[9px] px-1.5 py-0.5 rounded-lg shadow-xl flex flex-col items-center min-w-[32px] transform transition-transform group-hover:scale-110`}>
+                  <div className="absolute -right-14 top-0 bg-white/90 backdrop-blur-sm text-gray-900 border border-gray-100 text-[9px] px-1.5 py-0.5 rounded-lg shadow-xl flex flex-col items-center min-w-[32px] transform transition-transform group-hover:scale-110">
                     <span className="font-black leading-none">{Math.round(severity * 100)}%</span>
                     <span className="text-[6px] opacity-60 font-bold uppercase tracking-tighter">Severity</span>
                   </div>
@@ -116,8 +123,53 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result, imageU
       {/* Right Column: Metrics & Feedback */}
       <div className="lg:col-span-5 flex flex-col gap-6">
         <div className="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-emerald-900">Health Score</h2>
+          <div className="flex items-center justify-between mb-4 relative">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-emerald-900">Health Score</h2>
+              <button 
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+                onClick={() => setShowTooltip(!showTooltip)}
+                className="text-emerald-400 hover:text-emerald-600 transition-colors focus:outline-none"
+                aria-label="Health score information"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+
+              {/* Tooltip Popup */}
+              {showTooltip && (
+                <div className="absolute z-50 top-8 left-0 w-72 bg-emerald-900 text-white p-4 rounded-xl shadow-2xl text-[11px] leading-relaxed animate-in fade-in zoom-in duration-200 border border-emerald-700">
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-black text-emerald-400 uppercase tracking-widest mb-1">Calculation Algorithm</h4>
+                      <p className="opacity-90">100 &times; (Stage Conf. &times; (1 - Anomaly Prob.))</p>
+                      <p className="mt-1 opacity-70 italic text-[10px]">Adjusted for sample quality and anomaly density.</p>
+                    </div>
+                    <div>
+                      <h4 className="font-black text-emerald-400 uppercase tracking-widest mb-1">Severity Levels</h4>
+                      <ul className="space-y-1.5">
+                        <li className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                          <span><strong>Optimal:</strong> (&gt;70) Healthy growth markers.</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                          <span><strong>Monitoring:</strong> (40-70) Early stress signs.</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-red-400"></span>
+                          <span><strong>Critical:</strong> (&lt;40) High risk / pests.</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="absolute top-0 left-6 -mt-1 w-2 h-2 bg-emerald-900 rotate-45 border-l border-t border-emerald-700"></div>
+                </div>
+              )}
+            </div>
+
             <span className={`px-3 py-1 rounded-full text-xs font-bold ${
               result.health_score > 70 ? 'bg-emerald-100 text-emerald-700' : 
               result.health_score > 40 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
