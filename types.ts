@@ -29,3 +29,24 @@ export interface AnalysisHistoryItem extends AnalysisResult {
     issue?: string;
   };
 }
+
+// Dataset related types
+export interface DatasetStats {
+  num_batches: number;
+  num_samples: number;
+  class_counts: Record<string, number>;
+  classes: string[];
+}
+
+export interface DatasetUploadResponse {
+  upload_id: string;
+  stats: Record<string, DatasetStats>;
+  pipeline_sanity_check: boolean;
+  sample_run: {
+    batch_shape?: number[];
+    output_shape?: number[];
+    sample_paths?: string[];
+    error?: string;
+  };
+  work_dir: string;
+}
