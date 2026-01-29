@@ -47,6 +47,7 @@ export interface DatasetUploadResponse {
     output_shape?: number[];
     sample_paths?: string[];
     error?: string;
+    ai_summary?: string;
   };
   work_dir: string;
 }
